@@ -1,2 +1,2 @@
-idf_component_register(SRCS "wifi_manager.c" "main.c"
+idf_component_register(SRCS "mqtt_manager.c" "led_manager.c" "wifi_manager.c" "main.c"
                     INCLUDE_DIRS ".")
