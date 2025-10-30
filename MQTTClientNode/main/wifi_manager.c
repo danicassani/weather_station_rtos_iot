@@ -9,7 +9,7 @@
 
 static const char *TAG = "WIFI_MANAGER";
 
-// Event group para sincronización WiFi
+// Event group for WiFi synchronization
 static EventGroupHandle_t s_wifi_event_group = NULL;
 #define WIFI_CONNECTED_BIT BIT0
 #define WIFI_FAIL_BIT      BIT1
@@ -18,7 +18,7 @@ static int s_retry_num = 0;
 static const int MAX_RETRY = 10;
 static bool s_is_connected = false;
 
-// Manejador de eventos WiFi
+// WiFi event handler
 static void wifi_event_handler(void* arg, esp_event_base_t event_base,
                                 int32_t event_id, void* event_data)
 {
@@ -51,23 +51,23 @@ esp_err_t wifi_manager_init(const char *ssid, const char *password)
         return ESP_ERR_INVALID_ARG;
     }
 
-    // Crear event group
+    // Create event group
     s_wifi_event_group = xEventGroupCreate();
     if (s_wifi_event_group == NULL) {
         ESP_LOGE(TAG, "No se pudo crear event group");
         return ESP_ERR_NO_MEM;
     }
 
-    // Inicializar netif
+    // Initialize netif
     ESP_ERROR_CHECK(esp_netif_init());
     ESP_ERROR_CHECK(esp_event_loop_create_default());
     esp_netif_create_default_wifi_sta();
 
-    // Configuración WiFi
+    // WiFi configuration
     wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
     ESP_ERROR_CHECK(esp_wifi_init(&cfg));
 
-    // Registrar event handlers
+    // Register event handlers
     esp_event_handler_instance_t instance_any_id;
     esp_event_handler_instance_t instance_got_ip;
     ESP_ERROR_CHECK(esp_event_handler_instance_register(WIFI_EVENT,
@@ -81,7 +81,7 @@ esp_err_t wifi_manager_init(const char *ssid, const char *password)
                                                         NULL,
                                                         &instance_got_ip));
 
-    // Configurar credenciales WiFi
+    // Configure WiFi credentials
     wifi_config_t wifi_config = {
         .sta = {
             .threshold.authmode = WIFI_AUTH_WPA2_PSK,
@@ -96,7 +96,7 @@ esp_err_t wifi_manager_init(const char *ssid, const char *password)
 
     ESP_LOGI(TAG, "Inicialización WiFi completada. Esperando conexión...");
 
-    // Esperar a que se conecte o falle
+    // Wait until connected or failed
     EventBits_t bits = xEventGroupWaitBits(s_wifi_event_group,
             WIFI_CONNECTED_BIT | WIFI_FAIL_BIT,
             pdFALSE,

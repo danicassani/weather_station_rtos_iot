@@ -8,9 +8,9 @@ static const char *TAG = "MQTT_MANAGER";
 
 static esp_mqtt_client_handle_t s_mqtt_client = NULL;
 static bool s_is_connected = false;
-static char s_lwt_message[256];  // Buffer para el mensaje Last Will
+static char s_lwt_message[256];  // Buffer for Last Will message
 
-// Manejador de eventos MQTT
+// MQTT event handler
 static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_t event_id, void *event_data)
 {
     esp_mqtt_event_handle_t event = event_data;
@@ -72,14 +72,14 @@ esp_err_t mqtt_manager_init(const char *broker_uri, const char *client_id, const
     ESP_LOGI(TAG, "Inicializando cliente MQTT con broker: %s", broker_uri);
     ESP_LOGI(TAG, "Client ID: %s, IP: %s", client_id, ip_address);
 
-    // Construir mensaje Last Will Testament
+    // Build Last Will Testament message
     snprintf(s_lwt_message, sizeof(s_lwt_message),
              "Yo, %s, con IP %s, me he desconectado inesperadamente",
              client_id, ip_address);
 
     ESP_LOGI(TAG, "Last Will configurado: %s", s_lwt_message);
 
-    // Configuración del cliente MQTT con Last Will Testament
+    // MQTT client configuration with Last Will Testament
     esp_mqtt_client_config_t mqtt_cfg = {
         .broker.address.uri = broker_uri,
         .credentials.client_id = client_id,
@@ -90,7 +90,7 @@ esp_err_t mqtt_manager_init(const char *broker_uri, const char *client_id, const
             .qos = 1,
             .retain = false,
         },
-        .session.keepalive = 60,  // Keepalive de 60 segundos
+        .session.keepalive = 60,  // Keepalive of 60 seconds
     };
 
     s_mqtt_client = esp_mqtt_client_init(&mqtt_cfg);
@@ -99,7 +99,7 @@ esp_err_t mqtt_manager_init(const char *broker_uri, const char *client_id, const
         return ESP_FAIL;
     }
 
-    // Registrar manejador de eventos
+    // Register event handler
     esp_err_t err = esp_mqtt_client_register_event(s_mqtt_client, ESP_EVENT_ANY_ID, 
                                                      mqtt_event_handler, NULL);
     if (err != ESP_OK) {
@@ -109,7 +109,7 @@ esp_err_t mqtt_manager_init(const char *broker_uri, const char *client_id, const
         return err;
     }
 
-    // Iniciar cliente MQTT
+    // Start MQTT client
     err = esp_mqtt_client_start(s_mqtt_client);
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "Error al iniciar cliente MQTT: %s", esp_err_to_name(err));

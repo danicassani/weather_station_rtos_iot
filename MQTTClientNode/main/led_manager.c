@@ -10,10 +10,10 @@ static const char *TAG = "LED_MANAGER";
 static int s_gpio_num = -1;
 static gptimer_handle_t s_pulse_timer = NULL;
 
-// Callback del timer para apagar el LED después del pulso
+// Timer callback to turn off LED after pulse
 static bool IRAM_ATTR pulse_timer_callback(gptimer_handle_t timer, const gptimer_alarm_event_data_t *edata, void *user_ctx)
 {
-    gpio_set_level(s_gpio_num, 0);  // Apagar LED
+    gpio_set_level(s_gpio_num, 0);  // Turn off LED
     gptimer_stop(timer);
     return false;
 }
@@ -27,7 +27,7 @@ esp_err_t led_manager_init(int gpio_num)
 
     s_gpio_num = gpio_num;
 
-    // Configurar GPIO
+    // Configure GPIO
     gpio_config_t io_conf = {
         .pin_bit_mask = 1ULL << gpio_num,
         .mode = GPIO_MODE_OUTPUT,
@@ -42,11 +42,11 @@ esp_err_t led_manager_init(int gpio_num)
         return err;
     }
 
-    // Iniciar en LOW
+    // Start in LOW
     gpio_set_level(gpio_num, 0);
     ESP_LOGI(TAG, "GPIO %d configurado como salida", gpio_num);
 
-    // Configurar timer one-shot para pulsos
+    // Configure one-shot timer for pulses
     gptimer_config_t timer_config = {
         .clk_src = GPTIMER_CLK_SRC_DEFAULT,
         .direction = GPTIMER_COUNT_UP,
@@ -59,7 +59,7 @@ esp_err_t led_manager_init(int gpio_num)
         return err;
     }
 
-    // Configurar callback
+    // Configure callback
     gptimer_event_callbacks_t cbs = {
         .on_alarm = pulse_timer_callback,
     };
@@ -90,16 +90,16 @@ esp_err_t led_manager_deinit(void)
 
     esp_err_t err;
 
-    // Detener timer si está corriendo
+    // Stop timer if running
     gptimer_stop(s_pulse_timer);
 
-    // Deshabilitar timer
+    // Disable timer
     err = gptimer_disable(s_pulse_timer);
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "Error al deshabilitar timer: %s", esp_err_to_name(err));
     }
 
-    // Eliminar timer
+    // Delete timer
     err = gptimer_del_timer(s_pulse_timer);
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "Error al eliminar timer: %s", esp_err_to_name(err));
@@ -108,7 +108,7 @@ esp_err_t led_manager_deinit(void)
 
     s_pulse_timer = NULL;
 
-    // Apagar LED
+    // Turn off LED
     if (s_gpio_num >= 0) {
         gpio_set_level(s_gpio_num, 0);
         s_gpio_num = -1;
@@ -141,19 +141,19 @@ esp_err_t led_manager_pulse(uint32_t duration_ms)
         return ESP_ERR_INVALID_ARG;
     }
 
-    // Detener timer si está corriendo
+    // Stop timer if running
     gptimer_stop(s_pulse_timer);
     
-    // CRÍTICO: Resetear el contador del timer a 0
+    // CRITICAL: Reset timer counter to 0
     esp_err_t err = gptimer_set_raw_count(s_pulse_timer, 0);
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "Error al resetear contador: %s", esp_err_to_name(err));
         return err;
     }
 
-    // Configurar alarma one-shot
+    // Configure one-shot alarm
     gptimer_alarm_config_t alarm_config = {
-        .alarm_count = duration_ms * 1000, // convertir ms a microsegundos
+        .alarm_count = duration_ms * 1000, // convert ms to microseconds
         .flags.auto_reload_on_alarm = false, // one-shot
     };
     
@@ -164,10 +164,10 @@ esp_err_t led_manager_pulse(uint32_t duration_ms)
         return err;
     }
 
-    // Encender LED
+    // Turn on LED
     gpio_set_level(s_gpio_num, 1);
 
-    // Iniciar timer
+    // Start timer
     err = gptimer_start(s_pulse_timer);
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "Error al iniciar timer: %s", esp_err_to_name(err));

@@ -5,25 +5,25 @@
 #include <stdbool.h>
 
 /**
- * @brief Inicializa y conecta a la red WiFi
+ * @brief Initialize and connect to WiFi network
  * 
- * @param ssid SSID de la red WiFi
- * @param password Contraseña de la red WiFi
- * @return esp_err_t ESP_OK si la conexión fue exitosa, error en caso contrario
+ * @param ssid WiFi network SSID
+ * @param password WiFi network password
+ * @return esp_err_t ESP_OK if connection was successful, error otherwise
  */
 esp_err_t wifi_manager_init(const char *ssid, const char *password);
 
 /**
- * @brief Desconecta y desinicializa el WiFi
+ * @brief Disconnect and deinitialize WiFi
  * 
- * @return esp_err_t ESP_OK si fue exitoso
+ * @return esp_err_t ESP_OK if successful
  */
 esp_err_t wifi_manager_deinit(void);
 
 /**
- * @brief Verifica si el WiFi está conectado
+ * @brief Check if WiFi is connected
  * 
- * @return true si está conectado, false en caso contrario
+ * @return true if connected, false otherwise
  */
 bool wifi_manager_is_connected(void);
 

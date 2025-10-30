@@ -14,23 +14,23 @@
 
 static const char *TAG = "ESP32_MQTT";
 
-// Configuración WiFi - Modificar según tu red
+// WiFi Configuration - Modify according to your network
 #define WIFI_SSID      "DIGIFIBRA-2xt5"
 #define WIFI_PASS      "uTDcSbN74edQ"
 
-// Configuración MQTT - Modificar según tu broker
+// MQTT Configuration - Modify according to your broker
 #define MQTT_BROKER_URI "mqtt://192.168.1.250"
 #define MQTT_CLIENT_ID  "ESP32_NODE_001"
 #define MQTT_TOPIC      "ESP32"
 
-// Valores desde menuconfig (Kconfig.projbuild)
+// Values from menuconfig (Kconfig.projbuild)
 #ifndef CONFIG_BLINK_GPIO
 #define CONFIG_BLINK_GPIO 2
 #endif
 
-#define LED_PULSE_DURATION_MS 500  // Medio segundo
+#define LED_PULSE_DURATION_MS 500  // Half a second
 
-// Inicializar SNTP
+// Initialize SNTP
 static void initialize_sntp(void)
 {
     ESP_LOGI(TAG, "Inicializando SNTP...");
@@ -38,12 +38,12 @@ static void initialize_sntp(void)
     esp_sntp_setservername(0, "pool.ntp.org");
     esp_sntp_init();
     
-    // Configurar zona horaria (ajusta según tu zona)
-    setenv("TZ", "CET-1CEST,M3.5.0,M10.5.0/3", 1);  // Europa Central
+    // Configure timezone (adjust according to your zone)
+    setenv("TZ", "CET-1CEST,M3.5.0,M10.5.0/3", 1);  // Central Europe
     tzset();
 }
 
-// Obtener IP local
+// Get local IP
 static bool get_local_ip(char *ip_str, size_t max_len)
 {
     esp_netif_t *netif = esp_netif_get_handle_from_ifkey("WIFI_STA_DEF");
@@ -60,7 +60,7 @@ static bool get_local_ip(char *ip_str, size_t max_len)
     return true;
 }
 
-// Esperar sincronización NTP
+// Wait for NTP synchronization
 static void wait_for_time_sync(void)
 {
     time_t now = 0;
@@ -86,7 +86,7 @@ void app_main(void)
 {
     ESP_LOGI(TAG, "Arrancando blink…");
     
-    // Inicializar NVS (requerido para WiFi)
+    // Initialize NVS (required for WiFi)
     esp_err_t ret = nvs_flash_init();
     if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
         ESP_ERROR_CHECK(nvs_flash_erase());
@@ -94,7 +94,7 @@ void app_main(void)
     }
     ESP_ERROR_CHECK(ret);
     
-    // Inicializar LED manager (sin timer automático)
+    // Initialize LED manager (without automatic timer)
     ESP_LOGI(TAG, "Iniciando LED manager...");
     esp_err_t led_result = led_manager_init(CONFIG_BLINK_GPIO);
     if (led_result != ESP_OK) {
@@ -102,7 +102,7 @@ void app_main(void)
         return;
     }
     
-    // Inicializar WiFi
+    // Initialize WiFi
     ESP_LOGI(TAG, "Iniciando conexión WiFi...");
     esp_err_t wifi_result = wifi_manager_init(WIFI_SSID, WIFI_PASS);
     if (wifi_result != ESP_OK) {
@@ -110,16 +110,16 @@ void app_main(void)
         return;
     }
     
-    // Inicializar y sincronizar SNTP
+    // Initialize and synchronize SNTP
     initialize_sntp();
     wait_for_time_sync();
     
-    // Obtener IP local para Last Will
+    // Get local IP for Last Will
     char ip_address[16] = "N/A";
     get_local_ip(ip_address, sizeof(ip_address));
     ESP_LOGI(TAG, "IP local obtenida: %s", ip_address);
     
-    // Inicializar MQTT con Last Will Testament
+    // Initialize MQTT with Last Will Testament
     ESP_LOGI(TAG, "Iniciando cliente MQTT...");
     esp_err_t mqtt_result = mqtt_manager_init(MQTT_BROKER_URI, MQTT_CLIENT_ID, ip_address);
     if (mqtt_result != ESP_OK) {
@@ -127,14 +127,14 @@ void app_main(void)
         return;
     }
     
-    // Esperar un momento para que MQTT se conecte
+    // Wait a moment for MQTT to connect
     vTaskDelay(pdMS_TO_TICKS(2000));
     
-    // Bucle principal: publicar mensaje cada 10 segundos
+    // Main loop: publish message every 10 seconds
     while (true) {
-        // Publicar mensaje de prueba con timestamp, client_id e IP
+        // Publish test message with timestamp, client_id and IP
         if (mqtt_manager_is_connected()) {
-            // Obtener timestamp
+            // Get timestamp
             time_t now;
             struct tm timeinfo;
             time(&now);
@@ -143,11 +143,11 @@ void app_main(void)
             char timestamp[64];
             strftime(timestamp, sizeof(timestamp), "%d-%m-%Y %H:%M:%S", &timeinfo);
             
-            // Obtener IP local
+            // Get local IP
             char ip_address[16] = "N/A";
             get_local_ip(ip_address, sizeof(ip_address));
             
-            // Construir mensaje completo
+            // Build complete message
             char message[256];
             snprintf(message, sizeof(message), 
                      "ESP32 | Client: %s | IP: %s | Timestamp: %s",
@@ -156,7 +156,7 @@ void app_main(void)
             ESP_LOGI(TAG, "Publicando mensaje en topic '%s'...", MQTT_TOPIC);
             ESP_LOGI(TAG, "Mensaje: %s", message);
             
-            // Pulsar LED por medio segundo mientras se envía el mensaje
+            // Pulse LED for half a second while sending the message
             led_manager_pulse(LED_PULSE_DURATION_MS);
             
             int msg_id = mqtt_manager_publish(MQTT_TOPIC, message, 1, 0);
@@ -167,7 +167,7 @@ void app_main(void)
             ESP_LOGW(TAG, "MQTT no conectado, esperando conexión...");
         }
         
-        // Esperar 10 segundos antes del siguiente envío
+        // Wait 10 seconds before next send
         vTaskDelay(pdMS_TO_TICKS(10000));
     }
 }

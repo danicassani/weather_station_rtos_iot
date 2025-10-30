@@ -5,54 +5,54 @@
 #include <stdbool.h>
 
 /**
- * @brief Inicializa y conecta el cliente MQTT
+ * @brief Initialize and connect MQTT client
  * 
- * @param broker_uri URI del broker MQTT (ej: "mqtt://192.168.1.250")
- * @param client_id ID único del cliente
- * @param ip_address Dirección IP del cliente (para Last Will)
- * @return esp_err_t ESP_OK si fue exitoso
+ * @param broker_uri MQTT broker URI (e.g.: "mqtt://192.168.1.250")
+ * @param client_id Unique client ID
+ * @param ip_address Client IP address (for Last Will)
+ * @return esp_err_t ESP_OK if successful
  */
 esp_err_t mqtt_manager_init(const char *broker_uri, const char *client_id, const char *ip_address);
 
 /**
- * @brief Desinicializa y desconecta el cliente MQTT
+ * @brief Deinitialize and disconnect MQTT client
  * 
- * @return esp_err_t ESP_OK si fue exitoso
+ * @return esp_err_t ESP_OK if successful
  */
 esp_err_t mqtt_manager_deinit(void);
 
 /**
- * @brief Publica un mensaje en un topic MQTT
+ * @brief Publish a message to an MQTT topic
  * 
- * @param topic Topic donde publicar
- * @param message Mensaje a publicar
- * @param qos Calidad de servicio (0, 1 o 2)
- * @param retain Si el mensaje debe ser retenido por el broker
- * @return int ID del mensaje publicado, -1 si falla
+ * @param topic Topic to publish to
+ * @param message Message to publish
+ * @param qos Quality of Service (0, 1 or 2)
+ * @param retain Whether the message should be retained by the broker
+ * @return int Published message ID, -1 if failed
  */
 int mqtt_manager_publish(const char *topic, const char *message, int qos, int retain);
 
 /**
- * @brief Se suscribe a un topic MQTT
+ * @brief Subscribe to an MQTT topic
  * 
- * @param topic Topic al que suscribirse
- * @param qos Calidad de servicio (0, 1 o 2)
- * @return int ID de la suscripción, -1 si falla
+ * @param topic Topic to subscribe to
+ * @param qos Quality of Service (0, 1 or 2)
+ * @return int Subscription ID, -1 if failed
  */
 int mqtt_manager_subscribe(const char *topic, int qos);
 
 /**
- * @brief Se desuscribe de un topic MQTT
+ * @brief Unsubscribe from an MQTT topic
  * 
- * @param topic Topic del que desuscribirse
- * @return int ID de la desuscripción, -1 si falla
+ * @param topic Topic to unsubscribe from
+ * @return int Unsubscription ID, -1 if failed
  */
 int mqtt_manager_unsubscribe(const char *topic);
 
 /**
- * @brief Verifica si el cliente MQTT está conectado
+ * @brief Check if MQTT client is connected
  * 
- * @return true si está conectado, false en caso contrario
+ * @return true if connected, false otherwise
  */
 bool mqtt_manager_is_connected(void);
 
