@@ -88,7 +88,7 @@ esp_err_t mqtt_manager_init(const char *broker_uri, const char *client_id, const
             .msg = s_lwt_message,
             .msg_len = strlen(s_lwt_message),
             .qos = 1,
-            .retain = false,
+            .retain = true,
         },
         .session.keepalive = 60,  // Keepalive of 60 seconds
     };
