@@ -5,18 +5,13 @@
 #include "freertos/task.h"
 #include "esp_log.h"
 #include "esp_netif.h"
+#include "config.h"
 #include "wifi_manager.h"
 #include "led_manager.h"
 #include "mqtt_manager.h"
 #include "system_init.h"
 
 static const char *TAG = "ESP32_MQTT";
-
-// MQTT Configuration - Modify according to your broker
-#define MQTT_CLIENT_ID  "ESP32_NODE_001"
-#define MQTT_TOPIC      "ESP32"
-
-#define LED_PULSE_DURATION_MS 500  // Half a second
 
 // Helper function to get local IP (kept in main for publish loop)
 static bool get_local_ip(char *ip_str, size_t max_len)
@@ -37,7 +32,10 @@ static bool get_local_ip(char *ip_str, size_t max_len)
 
 void app_main(void)
 {
-    ESP_LOGI(TAG, "Arrancando blink…");
+    // Initialize logging levels first
+    init_logging();
+    
+    ESP_LOGI(TAG, "Starting blink…");
 
     if (init_nvs() != ESP_OK) {
         fatal_halt("NVS init failed");
@@ -56,17 +54,26 @@ void app_main(void)
         fatal_halt("Time sync or IP fetch failed");
     }
 
-    if (init_mqtt(MQTT_CLIENT_ID, ip_address) != ESP_OK) {
+    if (init_mqtt(CONFIG_MQTT_CLIENT_ID, ip_address) != ESP_OK) {
         fatal_halt("MQTT init failed");
     }
 
+    // Initialize Telnet logger for remote debugging
+    if (init_telnet_logger() != ESP_OK) {
+        ESP_LOGW(TAG, "Telnet logger init failed, continuing without it");
+    } else {
+        ESP_LOGI(TAG, "Telnet logger available on telnet://%s:%d", ip_address, CONFIG_TELNET_PORT);
+    }
+
     // Wait a moment for MQTT to connect
-    vTaskDelay(pdMS_TO_TICKS(2000));
+    vTaskDelay(pdMS_TO_TICKS(CONFIG_STARTUP_DELAY));
 
     // Main loop: publish message every 10 seconds
     while (true) {
         // Publish test message with timestamp, client_id and IP
         if (mqtt_manager_is_connected()) {
+            ESP_LOGD(TAG, "MQTT connected, preparing to publish...");
+            
             // Get timestamp
             time_t now;
             struct tm timeinfo;
@@ -79,28 +86,33 @@ void app_main(void)
             // Get local IP
             char loop_ip[16] = "N/A";
             get_local_ip(loop_ip, sizeof(loop_ip));
+            
+            ESP_LOGD(TAG, "IP: %s, Timestamp: %s", loop_ip, timestamp);
 
             // Build complete message
             char message[256];
             snprintf(message, sizeof(message),
                      "ESP32 | Client: %s | IP: %s | Timestamp: %s",
-                     MQTT_CLIENT_ID, loop_ip, timestamp);
+                     CONFIG_MQTT_CLIENT_ID, loop_ip, timestamp);
 
-            ESP_LOGI(TAG, "Publicando mensaje en topic '%s'...", MQTT_TOPIC);
-            ESP_LOGI(TAG, "Mensaje: %s", message);
+            ESP_LOGD(TAG, "Publishing message '%s' to topic '%s'...", message, CONFIG_MQTT_TOPIC);
 
             // Pulse LED for half a second while sending the message
-            led_manager_pulse(LED_PULSE_DURATION_MS);
+            led_manager_pulse(CONFIG_LED_PULSE_MS);
 
-            int msg_id = mqtt_manager_publish(MQTT_TOPIC, message, 1, 0);
+            int msg_id = mqtt_manager_publish(CONFIG_MQTT_TOPIC, message, CONFIG_MQTT_QOS, 0);
             if (msg_id != -1) {
-                ESP_LOGI(TAG, "Mensaje publicado exitosamente, msg_id=%d", msg_id);
+                ESP_LOGI(TAG, "Message published successfully, msg_id=%d", msg_id);
+                ESP_LOGD(TAG, "Message details - Topic: %s, QoS: %d, Length: %d", 
+                         CONFIG_MQTT_TOPIC, CONFIG_MQTT_QOS, strlen(message));
+            } else {
+                ESP_LOGE(TAG, "Failed to publish message");
             }
         } else {
-            ESP_LOGW(TAG, "MQTT no conectado, esperando conexión...");
+            ESP_LOGW(TAG, "MQTT not connected, waiting for connection...");
         }
 
-        // Wait 10 seconds before next send
-        vTaskDelay(pdMS_TO_TICKS(10000));
+        // Wait before next publish
+        vTaskDelay(pdMS_TO_TICKS(CONFIG_PUBLISH_INTERVAL));
     }
 }

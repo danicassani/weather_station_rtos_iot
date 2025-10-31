@@ -1,4 +1,5 @@
 #include "system_init.h"
+#include "config.h"
 #include <time.h>
 #include <sys/time.h>
 #include "freertos/FreeRTOS.h"
@@ -10,31 +11,37 @@
 #include "wifi_manager.h"
 #include "led_manager.h"
 #include "mqtt_manager.h"
+#include "telnet_logger.h"
 
 static const char *TAG = "SYSTEM_INIT";
 
-// WiFi Configuration - Modify according to your network
-#define WIFI_SSID      "DIGIFIBRA-2xt5"
-#define WIFI_PASS      "uTDcSbN74edQ"
-
-// MQTT Configuration - Modify according to your broker
-#define MQTT_BROKER_URI "mqtt://192.168.1.250"
-
-// Values from menuconfig (Kconfig.projbuild)
-#ifndef CONFIG_BLINK_GPIO
-#define CONFIG_BLINK_GPIO 2
-#endif
+// Configure log levels for all modules
+static void configure_log_levels(void)
+{
+    // Set global default log level
+    esp_log_level_set("*", CONFIG_APP_LOG_LEVEL);
+    
+    // Set per-module log levels
+    esp_log_level_set("WIFI_MANAGER", CONFIG_LOG_LEVEL_WIFI);
+    esp_log_level_set("MQTT_MANAGER", CONFIG_LOG_LEVEL_MQTT);
+    esp_log_level_set("LED_MANAGER", CONFIG_LOG_LEVEL_LED);
+    esp_log_level_set("TELNET_LOGGER", CONFIG_LOG_LEVEL_TELNET);
+    esp_log_level_set("SYSTEM_INIT", CONFIG_LOG_LEVEL_INIT);
+    esp_log_level_set("ESP32_MQTT", CONFIG_LOG_LEVEL_MAIN);
+    
+    ESP_LOGI(TAG, "Log levels configured - Global: %d", CONFIG_APP_LOG_LEVEL);
+}
 
 // Initialize SNTP
 static void initialize_sntp(void)
 {
-    ESP_LOGI(TAG, "Inicializando SNTP...");
+    ESP_LOGI(TAG, "Initializing SNTP...");
     esp_sntp_setoperatingmode(SNTP_OPMODE_POLL);
-    esp_sntp_setservername(0, "pool.ntp.org");
+    esp_sntp_setservername(0, CONFIG_NTP_SERVER);
     esp_sntp_init();
     
-    // Configure timezone (adjust according to your zone)
-    setenv("TZ", "CET-1CEST,M3.5.0,M10.5.0/3", 1);  // Central Europe
+    // Configure timezone
+    setenv("TZ", CONFIG_TIMEZONE, 1);
     tzset();
 }
 
@@ -61,19 +68,18 @@ static void wait_for_time_sync(void)
     time_t now = 0;
     struct tm timeinfo = { 0 };
     int retry = 0;
-    const int retry_count = 10;
 
-    while (timeinfo.tm_year < (2023 - 1900) && ++retry < retry_count) {
-        ESP_LOGI(TAG, "Esperando sincronización de tiempo... (%d/%d)", retry, retry_count);
+    while (timeinfo.tm_year < (2023 - 1900) && ++retry < CONFIG_NTP_SYNC_TIMEOUT) {
+        ESP_LOGI(TAG, "Waiting for time synchronization... (%d/%d)", retry, CONFIG_NTP_SYNC_TIMEOUT);
         vTaskDelay(pdMS_TO_TICKS(2000));
         time(&now);
         localtime_r(&now, &timeinfo);
     }
     
-    if (retry >= retry_count) {
-        ESP_LOGW(TAG, "No se pudo sincronizar el tiempo con NTP");
+    if (retry >= CONFIG_NTP_SYNC_TIMEOUT) {
+        ESP_LOGW(TAG, "Failed to synchronize time with NTP");
     } else {
-        ESP_LOGI(TAG, "Tiempo sincronizado correctamente");
+        ESP_LOGI(TAG, "Time synchronized successfully");
     }
 }
 
@@ -98,16 +104,22 @@ esp_err_t init_nvs(void)
     return ret;
 }
 
+esp_err_t init_logging(void)
+{
+    configure_log_levels();
+    return ESP_OK;
+}
+
 esp_err_t init_led(void)
 {
-    ESP_LOGI(TAG, "Iniciando LED manager...");
+    ESP_LOGI(TAG, "Starting LED manager...");
     return led_manager_init(CONFIG_BLINK_GPIO);
 }
 
 esp_err_t init_wifi(void)
 {
-    ESP_LOGI(TAG, "Iniciando conexión WiFi...");
-    return wifi_manager_init(WIFI_SSID, WIFI_PASS);
+    ESP_LOGI(TAG, "Starting WiFi connection...");
+    return wifi_manager_init(CONFIG_WIFI_SSID, CONFIG_WIFI_PASSWORD);
 }
 
 esp_err_t init_time(char* ip_out, size_t ip_out_len)
@@ -120,13 +132,24 @@ esp_err_t init_time(char* ip_out, size_t ip_out_len)
         if (!get_local_ip(ip_out, ip_out_len)) {
             return ESP_FAIL;
         }
-        ESP_LOGI(TAG, "IP local obtenida: %s", ip_out);
+        ESP_LOGI(TAG, "Local IP: %s", ip_out);
     }
     return ESP_OK;
 }
 
 esp_err_t init_mqtt(const char* client_id, const char* ip_address)
 {
-    ESP_LOGI(TAG, "Iniciando cliente MQTT...");
-    return mqtt_manager_init(MQTT_BROKER_URI, client_id, ip_address);
+    ESP_LOGI(TAG, "Starting MQTT client...");
+    return mqtt_manager_init(CONFIG_MQTT_BROKER_URI, client_id, ip_address);
+}
+
+esp_err_t init_telnet_logger(void)
+{
+#if CONFIG_TELNET_ENABLED
+    ESP_LOGI(TAG, "Starting Telnet server on port %d...", CONFIG_TELNET_PORT);
+    return telnet_logger_init(CONFIG_TELNET_PORT);
+#else
+    ESP_LOGI(TAG, "Telnet logger disabled in configuration");
+    return ESP_OK;
+#endif
 }

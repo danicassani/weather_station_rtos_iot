@@ -11,6 +11,13 @@
 esp_err_t init_nvs(void);
 
 /**
+ * @brief Initialize logging system with configured levels
+ * 
+ * @return esp_err_t ESP_OK if successful
+ */
+esp_err_t init_logging(void);
+
+/**
  * @brief Initialize LED manager
  * 
  * @return esp_err_t ESP_OK if successful
@@ -41,6 +48,13 @@ esp_err_t init_time(char* ip_out, size_t ip_out_len);
  * @return esp_err_t ESP_OK if successful
  */
 esp_err_t init_mqtt(const char* client_id, const char* ip_address);
+
+/**
+ * @brief Initialize Telnet logger server
+ * 
+ * @return esp_err_t ESP_OK if successful
+ */
+esp_err_t init_telnet_logger(void);
 
 /**
  * @brief Fatal halt: log reason and stop main task forever

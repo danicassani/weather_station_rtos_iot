@@ -21,7 +21,7 @@ static bool IRAM_ATTR pulse_timer_callback(gptimer_handle_t timer, const gptimer
 esp_err_t led_manager_init(int gpio_num)
 {
     if (gpio_num < 0) {
-        ESP_LOGE(TAG, "Número de GPIO inválido: %d", gpio_num);
+        ESP_LOGE(TAG, "Invalid GPIO number: %d", gpio_num);
         return ESP_ERR_INVALID_ARG;
     }
 
@@ -38,13 +38,13 @@ esp_err_t led_manager_init(int gpio_num)
     
     esp_err_t err = gpio_config(&io_conf);
     if (err != ESP_OK) {
-        ESP_LOGE(TAG, "Error al configurar GPIO %d: %s", gpio_num, esp_err_to_name(err));
+        ESP_LOGE(TAG, "Failed to configure GPIO %d: %s", gpio_num, esp_err_to_name(err));
         return err;
     }
 
     // Start in LOW
     gpio_set_level(gpio_num, 0);
-    ESP_LOGI(TAG, "GPIO %d configurado como salida", gpio_num);
+    ESP_LOGI(TAG, "GPIO %d configured as output", gpio_num);
 
     // Configure one-shot timer for pulses
     gptimer_config_t timer_config = {
@@ -55,7 +55,7 @@ esp_err_t led_manager_init(int gpio_num)
     
     err = gptimer_new_timer(&timer_config, &s_pulse_timer);
     if (err != ESP_OK) {
-        ESP_LOGE(TAG, "Error al crear timer: %s", esp_err_to_name(err));
+        ESP_LOGE(TAG, "Failed to create timer: %s", esp_err_to_name(err));
         return err;
     }
 
@@ -65,26 +65,26 @@ esp_err_t led_manager_init(int gpio_num)
     };
     err = gptimer_register_event_callbacks(s_pulse_timer, &cbs, NULL);
     if (err != ESP_OK) {
-        ESP_LOGE(TAG, "Error al registrar callback: %s", esp_err_to_name(err));
+        ESP_LOGE(TAG, "Failed to register callback: %s", esp_err_to_name(err));
         gptimer_del_timer(s_pulse_timer);
         return err;
     }
 
     err = gptimer_enable(s_pulse_timer);
     if (err != ESP_OK) {
-        ESP_LOGE(TAG, "Error al habilitar timer: %s", esp_err_to_name(err));
+        ESP_LOGE(TAG, "Failed to enable timer: %s", esp_err_to_name(err));
         gptimer_del_timer(s_pulse_timer);
         return err;
     }
 
-    ESP_LOGI(TAG, "LED manager iniciado: GPIO=%d", gpio_num);
+    ESP_LOGI(TAG, "LED manager started: GPIO=%d", gpio_num);
     return ESP_OK;
 }
 
 esp_err_t led_manager_deinit(void)
 {
     if (s_pulse_timer == NULL) {
-        ESP_LOGW(TAG, "LED manager no estaba inicializado");
+        ESP_LOGW(TAG, "LED manager was not initialized");
         return ESP_ERR_INVALID_STATE;
     }
 
@@ -96,13 +96,13 @@ esp_err_t led_manager_deinit(void)
     // Disable timer
     err = gptimer_disable(s_pulse_timer);
     if (err != ESP_OK) {
-        ESP_LOGE(TAG, "Error al deshabilitar timer: %s", esp_err_to_name(err));
+        ESP_LOGE(TAG, "Failed to disable timer: %s", esp_err_to_name(err));
     }
 
     // Delete timer
     err = gptimer_del_timer(s_pulse_timer);
     if (err != ESP_OK) {
-        ESP_LOGE(TAG, "Error al eliminar timer: %s", esp_err_to_name(err));
+        ESP_LOGE(TAG, "Failed to delete timer: %s", esp_err_to_name(err));
         return err;
     }
 
@@ -114,14 +114,14 @@ esp_err_t led_manager_deinit(void)
         s_gpio_num = -1;
     }
 
-    ESP_LOGI(TAG, "LED manager desinicializado");
+    ESP_LOGI(TAG, "LED manager deinitialized");
     return ESP_OK;
 }
 
 esp_err_t led_manager_set_level(bool level)
 {
     if (s_gpio_num < 0) {
-        ESP_LOGE(TAG, "LED manager no inicializado");
+        ESP_LOGE(TAG, "LED manager not initialized");
         return ESP_ERR_INVALID_STATE;
     }
 
@@ -132,12 +132,12 @@ esp_err_t led_manager_set_level(bool level)
 esp_err_t led_manager_pulse(uint32_t duration_ms)
 {
     if (s_gpio_num < 0 || s_pulse_timer == NULL) {
-        ESP_LOGE(TAG, "LED manager no inicializado");
+        ESP_LOGE(TAG, "LED manager not initialized");
         return ESP_ERR_INVALID_STATE;
     }
 
     if (duration_ms == 0) {
-        ESP_LOGE(TAG, "La duración debe ser mayor que 0");
+        ESP_LOGE(TAG, "Duration must be greater than 0");
         return ESP_ERR_INVALID_ARG;
     }
 
@@ -147,7 +147,7 @@ esp_err_t led_manager_pulse(uint32_t duration_ms)
     // CRITICAL: Reset timer counter to 0
     esp_err_t err = gptimer_set_raw_count(s_pulse_timer, 0);
     if (err != ESP_OK) {
-        ESP_LOGE(TAG, "Error al resetear contador: %s", esp_err_to_name(err));
+        ESP_LOGE(TAG, "Failed to reset counter: %s", esp_err_to_name(err));
         return err;
     }
 
@@ -159,7 +159,7 @@ esp_err_t led_manager_pulse(uint32_t duration_ms)
     
     err = gptimer_set_alarm_action(s_pulse_timer, &alarm_config);
     if (err != ESP_OK) {
-        ESP_LOGE(TAG, "Error al configurar alarma: %s", esp_err_to_name(err));
+        ESP_LOGE(TAG, "Failed to configure alarm: %s", esp_err_to_name(err));
         gpio_set_level(s_gpio_num, 0);
         return err;
     }
@@ -170,7 +170,7 @@ esp_err_t led_manager_pulse(uint32_t duration_ms)
     // Start timer
     err = gptimer_start(s_pulse_timer);
     if (err != ESP_OK) {
-        ESP_LOGE(TAG, "Error al iniciar timer: %s", esp_err_to_name(err));
+        ESP_LOGE(TAG, "Failed to start timer: %s", esp_err_to_name(err));
         gpio_set_level(s_gpio_num, 0);
         return err;
     }

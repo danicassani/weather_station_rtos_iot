@@ -1,4 +1,5 @@
 #include "wifi_manager.h"
+#include "config.h"
 #include <string.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/event_groups.h"
@@ -15,7 +16,6 @@ static EventGroupHandle_t s_wifi_event_group = NULL;
 #define WIFI_FAIL_BIT      BIT1
 
 static int s_retry_num = 0;
-static const int MAX_RETRY = 10;
 static bool s_is_connected = false;
 
 // WiFi event handler
@@ -24,20 +24,20 @@ static void wifi_event_handler(void* arg, esp_event_base_t event_base,
 {
     if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_START) {
         esp_wifi_connect();
-        ESP_LOGI(TAG, "Conectando a WiFi...");
+        ESP_LOGI(TAG, "Connecting to WiFi with SSID: %s", CONFIG_WIFI_SSID);
     } else if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_DISCONNECTED) {
         s_is_connected = false;
-        if (s_retry_num < MAX_RETRY) {
+        if (s_retry_num < CONFIG_WIFI_MAX_RETRY) {
             esp_wifi_connect();
             s_retry_num++;
-            ESP_LOGI(TAG, "Reintentando conexión WiFi... (%d/%d)", s_retry_num, MAX_RETRY);
+            ESP_LOGI(TAG, "Retrying WiFi connection... (%d/%d)", s_retry_num, CONFIG_WIFI_MAX_RETRY);
         } else {
             xEventGroupSetBits(s_wifi_event_group, WIFI_FAIL_BIT);
-            ESP_LOGE(TAG, "Fallo al conectar a WiFi después de %d intentos", MAX_RETRY);
+            ESP_LOGE(TAG, "Failed to connect to WiFi after %d attempts", CONFIG_WIFI_MAX_RETRY);
         }
     } else if (event_base == IP_EVENT && event_id == IP_EVENT_STA_GOT_IP) {
         ip_event_got_ip_t* event = (ip_event_got_ip_t*) event_data;
-        ESP_LOGI(TAG, "IP obtenida: " IPSTR, IP2STR(&event->ip_info.ip));
+        ESP_LOGI(TAG, "Got IP: " IPSTR, IP2STR(&event->ip_info.ip));
         s_retry_num = 0;
         s_is_connected = true;
         xEventGroupSetBits(s_wifi_event_group, WIFI_CONNECTED_BIT);
@@ -47,14 +47,14 @@ static void wifi_event_handler(void* arg, esp_event_base_t event_base,
 esp_err_t wifi_manager_init(const char *ssid, const char *password)
 {
     if (ssid == NULL || password == NULL) {
-        ESP_LOGE(TAG, "SSID o password NULL");
+        ESP_LOGE(TAG, "SSID or password is NULL");
         return ESP_ERR_INVALID_ARG;
     }
 
     // Create event group
     s_wifi_event_group = xEventGroupCreate();
     if (s_wifi_event_group == NULL) {
-        ESP_LOGE(TAG, "No se pudo crear event group");
+        ESP_LOGE(TAG, "Failed to create event group");
         return ESP_ERR_NO_MEM;
     }
 
@@ -94,7 +94,7 @@ esp_err_t wifi_manager_init(const char *ssid, const char *password)
     ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_STA, &wifi_config));
     ESP_ERROR_CHECK(esp_wifi_start());
 
-    ESP_LOGI(TAG, "Inicialización WiFi completada. Esperando conexión...");
+    ESP_LOGI(TAG, "WiFi initialization completed. Waiting for connection...");
 
     // Wait until connected or failed
     EventBits_t bits = xEventGroupWaitBits(s_wifi_event_group,
@@ -104,13 +104,13 @@ esp_err_t wifi_manager_init(const char *ssid, const char *password)
             portMAX_DELAY);
 
     if (bits & WIFI_CONNECTED_BIT) {
-        ESP_LOGI(TAG, "Conectado a SSID: %s", ssid);
+        ESP_LOGI(TAG, "Connected to SSID: %s", ssid);
         return ESP_OK;
     } else if (bits & WIFI_FAIL_BIT) {
-        ESP_LOGE(TAG, "Fallo al conectar a SSID: %s", ssid);
+        ESP_LOGE(TAG, "Failed to connect to SSID: %s", ssid);
         return ESP_FAIL;
     } else {
-        ESP_LOGE(TAG, "Evento inesperado");
+        ESP_LOGE(TAG, "Unexpected event");
         return ESP_FAIL;
     }
 }
@@ -121,13 +121,13 @@ esp_err_t wifi_manager_deinit(void)
     
     esp_err_t err = esp_wifi_stop();
     if (err != ESP_OK) {
-        ESP_LOGE(TAG, "Error al detener WiFi: %s", esp_err_to_name(err));
+        ESP_LOGE(TAG, "Failed to stop WiFi: %s", esp_err_to_name(err));
         return err;
     }
 
     err = esp_wifi_deinit();
     if (err != ESP_OK) {
-        ESP_LOGE(TAG, "Error al desinicializar WiFi: %s", esp_err_to_name(err));
+        ESP_LOGE(TAG, "Failed to deinitialize WiFi: %s", esp_err_to_name(err));
         return err;
     }
 
@@ -136,7 +136,7 @@ esp_err_t wifi_manager_deinit(void)
         s_wifi_event_group = NULL;
     }
 
-    ESP_LOGI(TAG, "WiFi desinicializado correctamente");
+    ESP_LOGI(TAG, "WiFi deinitialized successfully");
     return ESP_OK;
 }
 
