@@ -57,6 +57,27 @@ esp_err_t init_mqtt(const char* client_id, const char* ip_address);
 esp_err_t init_telnet_logger(void);
 
 /**
+ * @brief Initialize DHT11 sensor
+ * 
+ * @return esp_err_t ESP_OK if successful
+ */
+esp_err_t init_dht11(void);
+
+/**
+ * @brief Initialize ADC scanner
+ * 
+ * @return esp_err_t ESP_OK if successful
+ */
+esp_err_t init_adc_scanner(void);
+
+/**
+ * @brief Initialize hygrometer sensor
+ * 
+ * @return esp_err_t ESP_OK if successful
+ */
+esp_err_t init_hygrometer(void);
+
+/**
  * @brief Fatal halt: log reason and stop main task forever
  * 
  * @param reason Error message to log

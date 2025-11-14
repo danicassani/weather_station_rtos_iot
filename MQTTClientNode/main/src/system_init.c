@@ -12,6 +12,9 @@
 #include "led_manager.h"
 #include "mqtt_manager.h"
 #include "telnet_logger.h"
+#include "dht11_manager.h"
+#include "adc_scanner.h"
+#include "hygrometer_manager.h"
 
 static const char *TAG = "SYSTEM_INIT";
 
@@ -28,6 +31,9 @@ static void configure_log_levels(void)
     esp_log_level_set("TELNET_LOGGER", CONFIG_LOG_LEVEL_TELNET);
     esp_log_level_set("SYSTEM_INIT", CONFIG_LOG_LEVEL_INIT);
     esp_log_level_set("ESP32_MQTT", CONFIG_LOG_LEVEL_MAIN);
+    esp_log_level_set("DHT11_MANAGER", CONFIG_LOG_LEVEL_DHT11);
+    esp_log_level_set("ADC_SCANNER", CONFIG_LOG_LEVEL_ADC);
+    esp_log_level_set("HYGROMETER_MANAGER", CONFIG_LOG_LEVEL_HYGRO);
     
     ESP_LOGI(TAG, "Log levels configured - Global: %d", CONFIG_APP_LOG_LEVEL);
 }
@@ -152,4 +158,29 @@ esp_err_t init_telnet_logger(void)
     ESP_LOGI(TAG, "Telnet logger disabled in configuration");
     return ESP_OK;
 #endif
+}
+
+esp_err_t init_dht11(void)
+{
+    ESP_LOGI(TAG, "Initializing DHT11 sensor...");
+    
+    // Pass -1 to auto-scan all GPIOs when CONFIG_DHT11_AUTO_SCAN is true (1),
+    // otherwise use CONFIG_DHT11_GPIO for a fixed pin.
+#if CONFIG_DHT11_AUTO_SCAN
+    return dht11_manager_init(-1);  // Auto-scan mode
+#else
+    return dht11_manager_init(CONFIG_DHT11_GPIO);  // Use configured GPIO
+#endif
+}
+
+esp_err_t init_adc_scanner(void)
+{
+    ESP_LOGI(TAG, "Initializing ADC scanner...");
+    return adc_scanner_init();
+}
+
+esp_err_t init_hygrometer(void)
+{
+    ESP_LOGI(TAG, "Initializing hygrometer sensor...");
+    return hygrometer_manager_init(CONFIG_HYGROMETER_GPIO);
 }

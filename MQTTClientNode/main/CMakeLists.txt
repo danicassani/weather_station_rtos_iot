@@ -4,4 +4,8 @@ idf_component_register(SRCS "main.c"
                             "src/mqtt_manager.c"
                             "src/system_init.c"
                             "src/telnet_logger.c"
-                    INCLUDE_DIRS "include")
+                            "src/dht11_manager.c"
+                            "src/adc_scanner.c"
+                            "src/hygrometer_manager.c"
+                    INCLUDE_DIRS "include"
+                    REQUIRES json esp_netif esp_wifi nvs_flash mqtt driver esp_adc lwip freertos)

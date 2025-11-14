@@ -13,7 +13,7 @@
 // ============================================================================
 // MQTT Configuration
 // ============================================================================
-#define CONFIG_MQTT_BROKER_URI    "mqtt://192.168.1.250"
+#define CONFIG_MQTT_BROKER_URI    "mqtt://192.168.1.135"
 #define CONFIG_MQTT_CLIENT_ID     "ESP32_NODE_001"
 #define CONFIG_MQTT_TOPIC         "ESP32"
 #define CONFIG_MQTT_LWT_TOPIC     "disconnections"
@@ -43,9 +43,33 @@
 #define CONFIG_LED_PULSE_MS       500  // LED pulse duration in milliseconds
 
 // ============================================================================
+// DHT11 Sensor Configuration
+// ============================================================================
+#define CONFIG_DHT11_GPIO         22   // GPIO pin connected to DHT11 data pin (ignored if AUTO_SCAN enabled)
+#define CONFIG_DHT11_READ_INTERVAL 1000  // Minimum interval between reads (ms), DHT11 needs 2s min
+#define CONFIG_DHT11_AUTO_SCAN    0    // Set to 1 to auto-detect DHT11 GPIO, 0 to use CONFIG_DHT11_GPIO
+
+// ============================================================================
+// ADC / Hygrometer Configuration
+// ============================================================================
+// Note: ADC2 (GPIO 0,2,4,12-15,25-27) cannot be used with WiFi enabled
+// Use ADC1 channels only: GPIO 32-39 (commonly 32,33,34,35,36,39)
+#define CONFIG_HYGROMETER_GPIO         32    // GPIO connected to hygrometer sensor (ADC1_CH4)
+#define CONFIG_HYGROMETER_READ_INTERVAL 1000 // Minimum interval between reads (ms)
+#define CONFIG_HYGROMETER_NUM_SAMPLES  64    // Number of ADC samples to average per reading
+
+// Calibration values: map ADC raw values to moisture percentage
+// Typical behavior: sensor reads higher voltage when dry, lower when wet
+// To calibrate: 
+//   1) Place sensor in dry air, note the raw value -> set as DRY_VALUE (0% moisture)
+//   2) Place sensor in water, note the raw value -> set as WET_VALUE (100% moisture)
+#define CONFIG_HYGROMETER_DRY_VALUE    2850  // Raw ADC value when completely dry (0% moisture)
+#define CONFIG_HYGROMETER_WET_VALUE    1550  // Raw ADC value when completely wet (100% moisture)
+
+// ============================================================================
 // Application Configuration
 // ============================================================================
-#define CONFIG_PUBLISH_INTERVAL   10000  // MQTT publish interval in milliseconds
+#define CONFIG_PUBLISH_INTERVAL   1000  // MQTT publish interval in milliseconds
 #define CONFIG_STARTUP_DELAY      2000   // Delay after init before starting main loop
 
 // ============================================================================
@@ -61,7 +85,7 @@
 
 // Set global log level (default: ESP_LOG_INFO)
 // Change this to ESP_LOG_DEBUG for more verbose output, or ESP_LOG_WARN for less
-#define CONFIG_APP_LOG_LEVEL      ESP_LOG_INFO
+#define CONFIG_APP_LOG_LEVEL      ESP_LOG_DEBUG
 
 // Per-module log levels (override global level for specific components)
 #define CONFIG_LOG_LEVEL_WIFI     ESP_LOG_WARN
@@ -70,5 +94,8 @@
 #define CONFIG_LOG_LEVEL_TELNET   ESP_LOG_WARN
 #define CONFIG_LOG_LEVEL_INIT     ESP_LOG_WARN
 #define CONFIG_LOG_LEVEL_MAIN     ESP_LOG_INFO
+#define CONFIG_LOG_LEVEL_DHT11    ESP_LOG_DEBUG   // DHT11 sensor logging
+#define CONFIG_LOG_LEVEL_ADC      ESP_LOG_DEBUG   // ADC scanner logging
+#define CONFIG_LOG_LEVEL_HYGRO    ESP_LOG_DEBUG   // Hygrometer logging
 
 #endif // CONFIG_H
