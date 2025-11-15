@@ -84,4 +84,6 @@ esp_err_t init_hygrometer(void);
  */
 void fatal_halt(const char* reason);
 
+esp_err_t init_system(void);
+
 #endif // SYSTEM_INIT_H

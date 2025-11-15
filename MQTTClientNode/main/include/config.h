@@ -85,7 +85,7 @@
 
 // Set global log level (default: ESP_LOG_INFO)
 // Change this to ESP_LOG_DEBUG for more verbose output, or ESP_LOG_WARN for less
-#define CONFIG_APP_LOG_LEVEL      ESP_LOG_DEBUG
+#define CONFIG_APP_LOG_LEVEL      ESP_LOG_INFO
 
 // Per-module log levels (override global level for specific components)
 #define CONFIG_LOG_LEVEL_WIFI     ESP_LOG_WARN
@@ -94,8 +94,8 @@
 #define CONFIG_LOG_LEVEL_TELNET   ESP_LOG_WARN
 #define CONFIG_LOG_LEVEL_INIT     ESP_LOG_WARN
 #define CONFIG_LOG_LEVEL_MAIN     ESP_LOG_INFO
-#define CONFIG_LOG_LEVEL_DHT11    ESP_LOG_DEBUG   // DHT11 sensor logging
-#define CONFIG_LOG_LEVEL_ADC      ESP_LOG_DEBUG   // ADC scanner logging
-#define CONFIG_LOG_LEVEL_HYGRO    ESP_LOG_DEBUG   // Hygrometer logging
+#define CONFIG_LOG_LEVEL_DHT11    ESP_LOG_INFO   // DHT11 sensor logging
+#define CONFIG_LOG_LEVEL_ADC      ESP_LOG_INFO   // ADC scanner logging
+#define CONFIG_LOG_LEVEL_HYGRO    ESP_LOG_INFO   // Hygrometer logging
 
 #endif // CONFIG_H

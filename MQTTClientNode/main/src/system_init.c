@@ -184,3 +184,48 @@ esp_err_t init_hygrometer(void)
     ESP_LOGI(TAG, "Initializing hygrometer sensor...");
     return hygrometer_manager_init(CONFIG_HYGROMETER_GPIO);
 }
+
+esp_err_t init_system(void)
+{
+    init_logging();
+    
+    if (init_nvs() != ESP_OK) {
+        fatal_halt("NVS init failed");
+        return ESP_FAIL;
+    }
+
+    if (init_led() != ESP_OK) {
+        fatal_halt("LED manager init failed");
+    }
+
+    if (init_wifi() != ESP_OK) {
+        fatal_halt("WiFi init failed");
+        return ESP_FAIL;
+    }
+
+    char ip_address[16] = "N/A";
+    if (init_time(ip_address, sizeof(ip_address)) != ESP_OK) {
+        fatal_halt("Time sync or IP fetch failed");
+        return ESP_FAIL;
+    }
+
+    if (init_mqtt(CONFIG_MQTT_CLIENT_ID, ip_address) != ESP_OK) {
+        fatal_halt("MQTT init failed");
+        return ESP_FAIL;
+    }
+
+    if (init_dht11() != ESP_OK) {
+        ESP_LOGW(TAG, "DHT11 init failed, continuing without sensor");
+    }
+
+    if (init_hygrometer() != ESP_OK) {
+        ESP_LOGW(TAG, "Hygrometer init failed, continuing without sensor");
+    }
+
+    if (init_telnet_logger() != ESP_OK) {
+        ESP_LOGW(TAG, "Telnet logger init failed, continuing without it");
+    } else {
+        ESP_LOGI(TAG, "Telnet logger available on telnet://%s:%d", ip_address, CONFIG_TELNET_PORT);
+    }
+    return ESP_OK;
+}

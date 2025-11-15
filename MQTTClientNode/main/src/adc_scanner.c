@@ -110,7 +110,7 @@ esp_err_t adc_scanner_init(void)
     // Configure all ADC1 channels
     adc_oneshot_chan_cfg_t config = {
         .bitwidth = ADC_BITWIDTH_DEFAULT,  // 12-bit
-        .atten = ADC_ATTEN_DB_11,          // 0-3.3V range
+        .atten = ADC_ATTEN_DB_12,          // 0-3.3V range
     };
 
     for (int i = 0; i < ADC1_GPIO_COUNT; i++) {
@@ -122,7 +122,7 @@ esp_err_t adc_scanner_init(void)
     }
 
     // Initialize calibration
-    adc_calibration_init(ADC_UNIT_1, ADC_ATTEN_DB_11, &adc1_cali_handle);
+    adc_calibration_init(ADC_UNIT_1, ADC_ATTEN_DB_12, &adc1_cali_handle);
 
     ESP_LOGI(TAG, "ADC scanner initialized (ADC1, 12-bit, 0-3.3V range)");
     return ESP_OK;
